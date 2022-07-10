@@ -30,28 +30,49 @@ class PubSub(object):
         except e:
             print(e)
         else:
-            # Cargamos la imagen
+            # Lectura de la imagen
             img = self.bridge.imgmsg_to_cv2(msg, "bgr8") # trainImage
             img2 = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype('uint8')
-
-            # Convertimos a escala de grises
-            gris = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
- 
-            # Aplicar suavizado Gaussiano
-            gauss = cv2.GaussianBlur(gris, (5,5), 0)
             
-            # Detectamos los bordes con Canny
-            canny = cv2.Canny(gauss, 50, 150)
+            # Conversión a grises
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-            # Buscamos los contornos
-            (contornos,_) = cv2.findContours(canny.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
- 
-            # Mostramos la cantidad de objetos encontrados por consola
-            print("He encontrado {} objetos".format(len(contornos)))
- 
-            cv2.drawContours(img,contornos,-1,(0,0,255), 2)
+            #Inversion de imagen - para defectos de color claros - macilla
+            inverted_image = np.invert(gray)
 
-            self.image = canny
+            # Processamiento de imagen ( smoothing )
+            # Averaging
+            blur = cv2.blur(inverted_image,(3,3))
+
+            # Apply logarithmic transform
+            img_log = (np.log(blur+1)/(np.log(1+np.max(blur))))*255
+
+            # Specify the data type
+            img_log = np.array(img_log,dtype=np.uint8)
+
+            # Image smoothing: bilateral filter
+            bilateral = cv2.bilateralFilter(img_log, 5, 75, 75)
+
+            # Canny Edge Detection
+            edges = cv2.Canny(bilateral,30,70)
+
+            # Morphological Closing Operator
+            kernel = np.ones((5,5),np.uint8)
+            closing = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+
+            # Create feature detecting method
+            #sift = cv2.xfeatures2d.SIFT_create()
+            #surf = cv2.xfeatures2d.SURF_create()
+            orb = cv2.ORB_create(nfeatures=1500)
+
+            #from google.colab.patches import cv2_imshow
+            #cv2_imshow(closing)
+
+            # Make featured Image
+            keypoints, descriptors = orb.detectAndCompute(closing, None)
+            featuredImg = cv2.drawKeypoints(closing, keypoints, None)
+
+            self.image = closing
 
     def start(self):
         while not rospy.is_shutdown():
