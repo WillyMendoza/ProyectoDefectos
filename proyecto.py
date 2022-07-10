@@ -65,9 +65,6 @@ class PubSub(object):
             #surf = cv2.xfeatures2d.SURF_create()
             orb = cv2.ORB_create(nfeatures=1500)
 
-            #from google.colab.patches import cv2_imshow
-            #cv2_imshow(closing)
-
             # Make featured Image
             keypoints, descriptors = orb.detectAndCompute(closing, None)
             featuredImg = cv2.drawKeypoints(closing, keypoints, None)
