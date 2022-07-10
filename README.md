@@ -4,4 +4,4 @@
  Para ejecutarlo debe tener camara ejecutandose y previamente calibrada- 
  Un roscore-
  Rviz para poder visualizar la entrada y el resultado.
- #El archivo del código esta con el nombre de proyecto.py
+ El archivo del código esta con el nombre de proyecto.py
